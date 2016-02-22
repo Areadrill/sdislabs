@@ -1,4 +1,5 @@
 package Server;
+import java.util.LinkedList;
 import java.util.Queue;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -7,7 +8,7 @@ import java.net.*;
 
 public class Server {
 	
-	private static Queue<Vehicle> db;
+	private static LinkedList<Vehicle> db = new LinkedList<Vehicle>();
 	
 	public static void main(String[] args){
 		DatagramSocket dSock = null;
@@ -38,7 +39,7 @@ public class Server {
 				System.out.println("SERVER: Data received was not text, resuming operation.");
 			}
 			
-			handleReceived(dataReceived);
+			handleReceived(dataReceived, dSock, dPack);
 		}
 	}
 	
@@ -62,25 +63,62 @@ public class Server {
 		return "NOT_FOUND";
 	}
 	
-	public static void handleReceived(String received){
+	public static void handleReceived(String received, DatagramSocket dSock, DatagramPacket dPack){
 		if(received == null){
 			return;
 		}
 		
 		String[] rec2 = received.split(" ");
-		//faltam as respostas ao cliente
+		boolean goodCommand = true;
 		switch(rec2[0]){
 			case "reg":
 				if(rec2.length != 3){
 					System.out.println("SERVER: Register request with wrong number of arguments");
+					goodCommand = false;
 				}
+				
 				int resp = register(rec2[1], rec2[2]);
+				
+				DatagramPacket dPackResp = null;
+				if(goodCommand){
+					dPackResp = new DatagramPacket(new Integer(resp).toString().getBytes(), new Integer(resp).toString().length(),
+							dPack.getAddress(), dPack.getPort());
+				}
+				else{
+					dPackResp = new DatagramPacket("-1".getBytes(), 2, dPack.getAddress(), dPack.getPort());
+				}
+				
+				try {
+					dSock.send(dPackResp);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
 				break;
 			case "look":
 				if(rec2.length != 2){
 					System.out.println("SERVER: Lookup request with wrong number of arguments");
+					goodCommand = false;
 				}
 				String owner = lookup(rec2[1]);
+				
+				if(goodCommand){
+					dPackResp = new DatagramPacket(owner.getBytes(), owner.length(),
+							dPack.getAddress(), dPack.getPort());
+				}
+				else{
+					dPackResp = new DatagramPacket("ERROR_NOT_CORRECT_COMMAND".getBytes(), "ERROR_NOT_CORRECT_COMMAND".length(), dPack.getAddress(), dPack.getPort());
+				}
+				
+				try {
+					dSock.send(dPackResp);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+				
 			default:
 				System.out.println("SERVER: Unknown request");
 				break;
