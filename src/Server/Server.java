@@ -1,4 +1,5 @@
 package Server;
+import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.io.IOException;
@@ -8,7 +9,7 @@ import java.net.*;
 
 public class Server {
 	
-	private static LinkedList<Vehicle> db = new LinkedList<Vehicle>();
+	private static Hashtable<String, String> db = new Hashtable<String, String>();
 	
 	public static void main(String[] args){
 		DatagramSocket dSock = null;
@@ -44,21 +45,16 @@ public class Server {
 	}
 	
 	public static int register(String plate, String owner){
-		for(Vehicle v: db){
-			if(v.getPlate().equals(plate)){
-				return -1;
-			}
+		if(db.containsKey(plate)){
+			return -1;
 		}
-		
-		db.add(new Vehicle(plate, owner));
+		db.put(plate, owner);
 		return db.size();
 	}
 	
 	public static String lookup(String plate){
-		for(Vehicle v: db){
-			if(v.getPlate().equals(plate)){
-				return v.getOwner();
-			}
+		if(db.containsKey(plate)){
+			return db.get(plate);
 		}
 		return "NOT_FOUND";
 	}
@@ -70,6 +66,7 @@ public class Server {
 		
 		String[] rec2 = received.split(" ");
 		boolean goodCommand = true;
+		
 		switch(rec2[0]){
 			case "reg":
 				if(rec2.length != 3){
@@ -77,10 +74,10 @@ public class Server {
 					goodCommand = false;
 				}
 				
-				int resp = register(rec2[1], rec2[2]);
-				
 				DatagramPacket dPackResp = null;
 				if(goodCommand){
+					int resp = register(rec2[1], rec2[2]);
+					
 					dPackResp = new DatagramPacket(new Integer(resp).toString().getBytes(), new Integer(resp).toString().length(),
 							dPack.getAddress(), dPack.getPort());
 				}
@@ -101,9 +98,10 @@ public class Server {
 					System.out.println("SERVER: Lookup request with wrong number of arguments");
 					goodCommand = false;
 				}
-				String owner = lookup(rec2[1]);
 				
 				if(goodCommand){
+					String owner = lookup(rec2[1]);
+					
 					dPackResp = new DatagramPacket(owner.getBytes(), owner.length(),
 							dPack.getAddress(), dPack.getPort());
 				}
@@ -114,8 +112,7 @@ public class Server {
 				try {
 					dSock.send(dPackResp);
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					System.out.println("SERVER: Could not send response to client, resuming operation");
 				}
 				
 				
