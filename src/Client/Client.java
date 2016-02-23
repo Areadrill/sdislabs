@@ -9,6 +9,11 @@ import java.net.UnknownHostException;
 
 public class Client {
 	public static void main(String[] args) {
+		
+//		for(String str: args){
+//			System.out.println(str);
+//		}
+		
 		DatagramSocket dSock = null;
 
 		try {
@@ -20,8 +25,14 @@ public class Client {
 
 		
 		try {
-			dSock.connect(InetAddress.getByName("localhost"), 8080);
-			DatagramPacket dPack = new DatagramPacket("look 1".getBytes(), "look 1".length());
+			dSock.connect(InetAddress.getByName(args[0]), Integer.parseInt(args[1]));
+			
+			String message = args[2];
+			for(int i = 3; i < args.length; i++){
+				message += (" " + args[i]);
+			}
+			
+			DatagramPacket dPack = new DatagramPacket(message.getBytes(), message.length());
 			dSock.send(dPack);
 		} catch (UnknownHostException e) {
 			System.out.println("CLIENT: Could not connect to server, exiting now");
@@ -41,8 +52,6 @@ public class Client {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
-		
 		
 	}
 }

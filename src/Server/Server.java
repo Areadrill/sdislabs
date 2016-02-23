@@ -2,6 +2,7 @@ package Server;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.regex.Pattern;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.*;
@@ -14,15 +15,18 @@ public class Server {
 	public static void main(String[] args){
 		DatagramSocket dSock = null;
 		try {
-			dSock = new DatagramSocket(8080);
+			dSock = new DatagramSocket(Integer.parseInt(args[0]));
 		} catch (SocketException e) {
 			System.out.println("SERVER: Could not create socket, exiting now.");
 			return;
 		}
+		catch(NumberFormatException e){
+			System.out.println("SERVER: Argument for port number is not a number");
+		}
 		while(true){
 			System.out.println("Server is running");
 			DatagramPacket dPack = null;
-			byte[] buf = new byte[256];
+			byte[] buf = new byte[275];
 			
 			try {
 				dPack = new DatagramPacket(buf, buf.length);
@@ -73,6 +77,10 @@ public class Server {
 					System.out.println("SERVER: Register request with wrong number of arguments");
 					goodCommand = false;
 				}
+				if(goodCommand && (!checkValidPlate(rec2[1]) || rec2[2].length() > 256)){
+					System.out.println("SERVER: Plate is not in the right format or owner name is too big");
+					goodCommand = false;
+				}
 				
 				DatagramPacket dPackResp = null;
 				if(goodCommand){
@@ -88,8 +96,7 @@ public class Server {
 				try {
 					dSock.send(dPackResp);
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					System.out.println("SERVER: Could not send response to client, resuming operation");
 				}
 				
 				break;
@@ -97,6 +104,9 @@ public class Server {
 				if(rec2.length != 2){
 					System.out.println("SERVER: Lookup request with wrong number of arguments");
 					goodCommand = false;
+				}
+				if(rec2[1].length() > 256){
+					System.out.println("SERVER: Owner name is too big");
 				}
 				
 				if(goodCommand){
@@ -119,13 +129,12 @@ public class Server {
 			default:
 				System.out.println("SERVER: Unknown request");
 				break;
-		}
-			
-		
-		
-		
+		}	
 	}
-		
+	
+	public static boolean checkValidPlate(String plate){
+		return Pattern.matches("([0-9A-Z]{2}-){2}[0-9A-Z]{2}", plate);
+	}
 }
 	
 	
