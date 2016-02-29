@@ -13,28 +13,76 @@ public class Server {
 	private static Hashtable<String, String> db = new Hashtable<String, String>();
 	
 	public static void main(String[] args){
+		
+		/*for(String str: args){
+			System.out.println(str);
+		}*/
+		
 		DatagramSocket dSock = null;
+		MulticastSocket mSock = null;
 		try {
 			dSock = new DatagramSocket(Integer.parseInt(args[0]));
+			dSock.setSoTimeout(1000);
+			
+			mSock = new MulticastSocket(Integer.parseInt(args[2]));
+			mSock.joinGroup(InetAddress.getByName(args[1]));
 		} catch (SocketException e) {
-			System.out.println("SERVER: Could not create socket, exiting now.");
+			System.out.println("SERVER: Could not create sockets, exiting now.");
 			return;
 		}
 		catch(NumberFormatException e){
 			System.out.println("SERVER: Argument for port number is not a number");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
+		
+		
+		
+		String broadcastMsg = null;
+		try {
+			broadcastMsg = InetAddress.getLocalHost().getHostAddress();
+		} catch (UnknownHostException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+		}
+		broadcastMsg += (" " + args[0]);
+		
+		
+		
+		System.out.println("Server is running");
 		while(true){
-			System.out.println("Server is running");
+			DatagramPacket mPack;
+			try {
+				mPack = new DatagramPacket(broadcastMsg.getBytes(), broadcastMsg.length(), InetAddress.getByName(args[1]), Integer.parseInt(args[2]));
+				mSock.send(mPack);
+			} catch (NumberFormatException e2) {
+				// TODO Auto-generated catch block
+				e2.printStackTrace();
+			} catch (UnknownHostException e2) {
+				// TODO Auto-generated catch block
+				e2.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			
 			DatagramPacket dPack = null;
 			byte[] buf = new byte[275];
 			
 			try {
 				dPack = new DatagramPacket(buf, buf.length);
 				dSock.receive(dPack);
-			} catch (IOException e) {
+			}catch (SocketTimeoutException e){
+				System.out.println("SERVER: Receive timed out, restarting loop");
+				continue;
+			}
+			catch (IOException e) {
 				System.out.println("SERVER: Something went wrong while receiving messages");
 				return;
 			}
+			
 			
 			String dataReceived = null;
 			
@@ -43,6 +91,8 @@ public class Server {
 			} catch (UnsupportedEncodingException e) {
 				System.out.println("SERVER: Data received was not text, resuming operation.");
 			}
+			
+			if(dataReceived.equals(""));
 			
 			handleReceived(dataReceived, dSock, dPack);
 		}
