@@ -45,6 +45,7 @@ public class Client {
 			System.out.println(response);
 			
 			cSock.shutdownOutput();
+			cSock.close();
 			
 		} catch (NumberFormatException | IOException e) {
 			// TODO Auto-generated catch block

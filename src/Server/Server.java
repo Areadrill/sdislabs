@@ -66,6 +66,7 @@ public class Server {
 				
 				String received = null;
 				
+				Thread.sleep(30);
 				
 				
 				if(sBufRead.ready()){
@@ -79,6 +80,9 @@ public class Server {
 			} catch (IOException e) {
 				System.err.println("SERVER: Could not establish I/O channels, exiting now.");
 				System.exit(-1);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 		
