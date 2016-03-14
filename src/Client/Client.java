@@ -12,44 +12,40 @@ import java.net.MulticastSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+
+import Server.RemoteInterface;
 
 public class Client {
+	
+	private Client() {};
+	
 	public static void main(String[] args) {
 		
-		for(String str: args){
+		/*for(String str: args){
 			System.out.println(str);
-		}
+		}*/
 		
-		
-		Socket cSock = null;
 		try {
-			cSock = new Socket(InetAddress.getByName(args[0]), Integer.parseInt(args[1]));
-			BufferedReader cBufRead = new BufferedReader(new InputStreamReader(cSock.getInputStream()));
-			PrintWriter cPrntWriter = new PrintWriter(cSock.getOutputStream());
+			Registry reg = LocateRegistry.getRegistry(args[0]);
+			RemoteInterface stub = (RemoteInterface) reg.lookup(args[1]);
 			
-			String message = args[2];
-			for(int i = 3; i < args.length; i++){
-				message += (" " + args[i]);
+			if(args[2].equals("reg") && args.length == 5){
+				stub.register(args[3], args[4]);
+			}
+			else if(args[2].equals("look") && args.length == 4){
+				stub.lookup(args[3]);
 			}
 			
-			System.out.println("Gonna send: " + message);
-			cPrntWriter.println(message);
-			cPrntWriter.flush();
 			
-			while(!cBufRead.ready()){
-				;
-			}
-			
-			String response = cBufRead.readLine();
-			
-			System.out.println(response);
-			
-			cSock.shutdownOutput();
-			cSock.close();
-			
-		} catch (NumberFormatException | IOException e) {
+		} catch (RemoteException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} catch (NotBoundException e) {
+			System.err.println("CLIENT: Registry lookup produced no results");
 		}
 		
 	}	
